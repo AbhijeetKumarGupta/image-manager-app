@@ -17,6 +17,7 @@ app.use(bodyParser.json());
 app.use(methodOverride("_method"));
 
 const mongoURI = process.env.URI;
+const password = process.env.PASSWORD;
 
 const conn = mongoose.createConnection(mongoURI);
 
@@ -31,40 +32,54 @@ const storage = new GridFsStorage({
   url: mongoURI,
   file: (req, file) => {
     return new Promise((resolve, reject) => {
-      crypto.randomBytes(16, (err, buf) => {
-        if (err) {
-          return reject(err);
-        }
-        const filename = buf.toString("hex") + path.extname(file.originalname);
-        const fileInfo = {
-          filename: filename,
-          bucketName: "logo",
-        };
-        resolve(fileInfo);
-      });
+      if (req.body.password === password) {
+        crypto.randomBytes(16, (err, buf) => {
+          if (err) {
+            return reject(err);
+          }
+          const filename = buf.toString("hex") + path.extname(file.originalname);
+          const fileInfo = {
+            filename: filename,
+            bucketName: "logo",
+          };
+          resolve(fileInfo);
+        });
+      } else {
+        reject("Unauthorized!");
+      }
     });
   },
+  fileDelete: (req) => req.body,
 });
-const upload = multer({ storage });
+const uploadDelete = multer({ storage });
 
 app.get("/", (req, res) => {
-  //   res.json({
-  //     message: "Welcome",
-  //   });
-
   gfs.files.find().toArray((err, files) => {
     if (!files || files.length === 0) {
       res.render("index", { files: false });
     } else {
       res.render("index", { files: files });
     }
-    //   res.json(files);
   });
 });
 
-app.post("/upload", upload.single("file"), (req, res) => {
-  //   res.json({ file: req.file });
+app.post("/upload", uploadDelete.single("file"), (req, res) => {
   res.redirect("/");
+});
+
+app.post("/files/:id", uploadDelete.single("fileDelete"), (req, res) => {
+  if (req.body.password === password) {
+    gfs.remove({ _id: req.params.id, root: "logo" }, (err, gridStore) => {
+      if (err) {
+        res.status(404).json({
+          error: err,
+        });
+      }
+      res.redirect("/");
+    });
+  }else{
+    res.send("Unauthorized!")
+  }
 });
 
 app.get("/files", (req, res) => {
@@ -85,7 +100,6 @@ app.get("/image/:filename", (req, res) => {
         error: "File Not Found!",
       });
     }
-    // res.json(file);
     if (
       file.contentType === "image/svg+xml" ||
       file.contentType === "image/jpeg" ||
@@ -98,17 +112,6 @@ app.get("/image/:filename", (req, res) => {
         error: "404 Not Found!",
       });
     }
-  });
-});
-
-app.delete("/files/:id", (req, res) => {
-  gfs.remove({ _id: req.params.id, root: "logo" }, (err, gridStore) => {
-    if (err) {
-      res.status(404).json({
-        error: err,
-      });
-    }
-    res.redirect("/");
   });
 });
 

@@ -26,6 +26,16 @@
         <div class="col-md-6 m-auto">
           <h1 class="text-center display-4 my-4">Upload Image</h1>
           <form action="/upload" method="post" enctype="multipart/form-data">
+            <label for="password">Password:</label>
+            <input
+              type="password"
+              name="password"
+              id="password"
+              class="mx-5"
+              style="border: 1px solid Black; border-radius: 5px; width: 52%"
+            />
+            <br/>
+            <label for="file" class="custom-file-label">Uploader:</label>
             <input
               type="file"
               name="file"
@@ -33,7 +43,6 @@
               class="custom-file-input mx-5"
               style="border: 1px solid Black; border-radius: 5px"
             />
-            <label for="file" class="custom-file-label"></label>
             <input
               type="submit"
               value="Submit"
@@ -41,12 +50,19 @@
             />
           </form>
           <hr />
-          <% if(files){%> <% files.forEach(function (file){ %> <%= file.filename
+          <% if(files){%> <% files.forEach(function (file, index){ %> <%= file.filename
           %>
           <div class="card mb-3">
-            <img src="image/<%= file.filename %>" alt="" srcset="" />
-            <form action="/files/<%= file._id%>?_method=DELETE" method="post">
-              <button class="btn btn-danger btn-block mt-4">Delete</button>
+            <img src="image/<%= file.filename %>" alt="" srcset="" class="mb-3"/>
+            <form action="/files/<%= file._id%>" method="post" enctype="multipart/form-data">
+              <label for="password" id="password_label">Password:</label>
+              <input
+                type="password"
+                name="password"
+                id="password"
+                style="border: 1px solid Black; border-radius: 5px; width: 100%;"
+              />
+              <button type="submit" class="btn btn-danger btn-block mt-4">Delete</button>
             </form>
           </div>
           <% }) %> <% }else{ %>
